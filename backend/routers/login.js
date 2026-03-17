@@ -21,7 +21,7 @@ router.post("/", async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id, email: user.email },
-      "your_jwt_secret_key", // Change this to a strong secret key
+      process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
 

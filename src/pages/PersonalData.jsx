@@ -6,6 +6,7 @@ import AddPetForm from "../components/AddPetForm";
 import AddVaccineForm from "../components/AddVaccineForm";
 import AddVisitForm from "../components/AddVisitForm";
 import HistoryModal from "../components/HistoryModal";
+import { API_BASE } from "../config";
 import "./PersonalData.css";
 
 export default function PersonalData() {
@@ -37,7 +38,7 @@ export default function PersonalData() {
     (async () => {
       try {
         const token = sessionStorage.getItem("token");
-        const res   = await fetch("http://localhost:5000/api/pets", { headers: { Authorization: `Bearer ${token}` } });
+        const res   = await fetch(`${API_BASE}/api/pets`, { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) {
           console.error("Failed to load pets", res.status, await res.text());
           return;
@@ -55,8 +56,8 @@ export default function PersonalData() {
   const handleShowForm = async () => {
     if (!petTypes.length) {
       const [typesRes, breedsRes] = await Promise.all([
-        fetch("http://localhost:5000/api/petTypes"),
-        fetch("http://localhost:5000/api/breeds")
+        fetch(`${API_BASE}/api/petTypes`),
+        fetch(`${API_BASE}/api/breeds`)
       ]);
       if (!typesRes.ok || !breedsRes.ok) return alert("Failed to load types/breeds");
       setPetTypes(await typesRes.json());
@@ -68,7 +69,7 @@ export default function PersonalData() {
   // add a new pet
   const handleAddPet = async formData => {
     const token = sessionStorage.getItem("token");
-    const res   = await fetch("http://localhost:5000/api/pets", {
+    const res   = await fetch(`${API_BASE}/api/pets`, {
       method : "POST",
       headers: { Authorization: `Bearer ${token}` },
       body   : formData
@@ -79,7 +80,7 @@ export default function PersonalData() {
   // edit an existing pet
   const handleEditPet = async formData => {
     const token = sessionStorage.getItem("token");
-    const res = await fetch(`http://localhost:5000/api/pets/${editingPet._id}`, {
+    const res = await fetch(`${API_BASE}/api/pets/${editingPet._id}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${token}` },
       body: formData
@@ -101,7 +102,7 @@ export default function PersonalData() {
   const handleDeletePet = async id => {
     if (!window.confirm("Are you sure?")) return;
     const token = sessionStorage.getItem("token");
-    const res   = await fetch(`http://localhost:5000/api/pets/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
+    const res   = await fetch(`${API_BASE}/api/pets/${id}`, { method:"DELETE", headers:{ Authorization:`Bearer ${token}` } });
     if (res.ok) setPets(await res.json()); else alert("Delete failed");
   };
 
@@ -126,7 +127,7 @@ export default function PersonalData() {
     if (!window.confirm("Are you sure you want to delete this visit?")) return;
     try {
       const token = sessionStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/pets/${modalInfo.petId}/visits/${visitId}`, {
+      const res = await fetch(`${API_BASE}/api/pets/${modalInfo.petId}/visits/${visitId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -157,7 +158,7 @@ export default function PersonalData() {
   const handleSaveVaccine = async (petId, vaccineData) => {
     try {
       const token = sessionStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/pets/${petId}/vaccines`, {
+      const res = await fetch(`${API_BASE}/api/pets/${petId}/vaccines`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -189,8 +190,8 @@ export default function PersonalData() {
     try {
       const token = sessionStorage.getItem("token");
       const url = visitId
-        ? `http://localhost:5000/api/pets/${petId}/visits/${visitId}`
-        : `http://localhost:5000/api/pets/${petId}/visits`;
+        ? `${API_BASE}/api/pets/${petId}/visits/${visitId}`
+        : `${API_BASE}/api/pets/${petId}/visits`;
       const method = visitId ? "PUT" : "POST";
       const res = await fetch(url, {
         method,
@@ -229,7 +230,7 @@ export default function PersonalData() {
     setAiLoading(true);
     try {
       const token = sessionStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/ai/pet-summary", {
+      const res = await fetch(`${API_BASE}/api/ai/pet-summary`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
         body: JSON.stringify({ petId })

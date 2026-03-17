@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../config";
 import "./EditProfile.css";
 
-const API = "http://localhost:5000/api/me";
+const API = `${API_BASE}/api/me`;
 
 const CITIES_API = "https://data.gov.il/api/3/action/datastore_search?resource_id=5c78e9fa-c2e2-4771-93ff-7f400a12f7ba&limit=2000";
 

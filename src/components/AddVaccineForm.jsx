@@ -1,11 +1,12 @@
 import React, { useEffect, useState } from "react";
+import { API_BASE } from "../config";
 import "./AddVaccineForm.css";
 
 export default function AddVaccineForm({
   pet,
   onCancel,
   onSave,       // (petId, { date, vaccineName, veterinarian, clinicAddress, notes }) => void
-  apiBase = "http://localhost:5000"
+  apiBase = API_BASE
 }) {
   const [vaccineOptions, setVaccineOptions] = useState([]);
   const [form, setForm] = useState({

@@ -27,7 +27,7 @@ router.use(async (req, res, next) => {
     const header = req.headers.authorization || "";
     const token = header.split(" ")[1];
     if (!token) return res.status(401).json({ message: "Unauthorized" });
-    const { userId } = jwt.verify(token, "your_jwt_secret_key");
+    const { userId } = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(userId, "role");
     if (!user || !MANAGE_ROLES.includes(user.role)) {
       return res.status(403).json({ message: "Access denied" });

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
+import { API_BASE } from "../config";
 import "./Admin.css";
 
-const API = "http://localhost:5000/api/admin";
+const API = `${API_BASE}/api/admin`;
 
 function getToken() {
   return sessionStorage.getItem("token");

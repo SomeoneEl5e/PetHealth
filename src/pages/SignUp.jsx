@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../config";
 import "./SignUp.css";
 
 const CITIES_API = "https://data.gov.il/api/3/action/datastore_search?resource_id=5c78e9fa-c2e2-4771-93ff-7f400a12f7ba&limit=2000";
@@ -83,7 +84,7 @@ function SignUp() {
     const formattedDate = `${formData.dateOfBirth.day}-${formData.dateOfBirth.month}-${formData.dateOfBirth.year}`;
 
     try {
-      const response = await fetch("http://localhost:5000/api/signup", {
+      const response = await fetch(`${API_BASE}/api/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

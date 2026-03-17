@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { API_BASE } from "../config";
 import './Login.css'
 
 function Login({ setIsLoggedIn }) {
@@ -14,7 +15,7 @@ function Login({ setIsLoggedIn }) {
     e.preventDefault();
 
     try {
-      const response = await fetch("http://localhost:5000/api/login", {
+      const response = await fetch(`${API_BASE}/api/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(formData),
