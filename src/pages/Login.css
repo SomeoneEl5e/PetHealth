@@ -1,0 +1,75 @@
+/* Login.css */
+
+/* Outer container (card) */
+.login-container {
+  max-width: 420px;
+  margin: 48px auto;
+  padding: 36px 32px;
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+/* Title */
+.login-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+/* Form itself */
+.login-container form {
+  display: flex;
+  flex-direction: column;
+}
+
+/* Label + field wrapper */
+.login-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Input fields */
+.login-input {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 6px;
+  margin-bottom: 20px;
+  font-size: 15px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.login-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+  background: var(--bg-input-focus);
+}
+
+/* Submit button */
+.login-button {
+  width: 100%;
+  padding: 12px;
+  background-color: #2d3e50;
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.login-button:hover {
+  background-color: #1e2a38;
+}

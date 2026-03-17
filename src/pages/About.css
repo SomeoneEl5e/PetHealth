@@ -1,0 +1,307 @@
+/* src/pages/About.css */
+
+.about-page {
+  padding: 48px 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.about-container {
+  max-width: 900px;
+  width: 100%;
+  padding: 56px 48px;
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+/* ─── Hero ─── */
+.about-hero {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.about-hero h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 18px;
+}
+
+.about-hero p {
+  font-size: 1.05rem;
+  color: var(--text-secondary);
+  line-height: 1.75;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+/* ─── Highlight (side-by-side) ─── */
+.about-highlight {
+  display: flex;
+  align-items: center;
+  gap: 40px;
+  margin-bottom: 48px;
+  padding: 32px;
+  background: var(--bg-card-alt);
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+}
+
+.about-highlight--reverse {
+  flex-direction: row-reverse;
+}
+
+.about-highlight__content {
+  flex: 1;
+  min-width: 0;
+}
+
+.about-highlight__content h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.about-highlight__content p {
+  font-size: 0.93rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  margin-bottom: 14px;
+}
+
+.about-highlight__image {
+  flex: 0 0 220px;
+}
+
+.about-highlight__image img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+}
+
+/* ─── Checklist ─── */
+.about-check-list {
+  list-style: none;
+  padding: 0;
+  margin: 8px 0 0;
+}
+
+.about-check-list li {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  padding: 5px 0 5px 24px;
+  position: relative;
+  line-height: 1.55;
+}
+
+.about-check-list li::before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #61dafb;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+/* ─── Named Section ─── */
+.about-section {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.about-section h2 {
+  font-size: 1.45rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.about-section__desc {
+  font-size: 0.93rem;
+  color: var(--text-muted);
+  margin-bottom: 28px;
+}
+
+/* ─── Feature Cards (For Pet Owners) ─── */
+.about-features {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  text-align: center;
+}
+
+.about-feature-card {
+  padding: 24px 18px;
+  background: var(--bg-card-alt);
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.about-feature-card:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.about-feature-card__icon {
+  font-size: 28px;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.about-feature-card h4 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.about-feature-card p {
+  font-size: 0.83rem;
+  color: var(--text-muted);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ─── Technology ─── */
+.about-tech {
+  text-align: center;
+  margin-bottom: 48px;
+  padding: 24px 32px;
+  background: var(--bg-card-alt);
+  border-radius: 10px;
+  border: 1px solid var(--border-light);
+}
+
+.about-tech h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 10px;
+}
+
+.about-tech p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.7;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+/* ─── Team ─── */
+.about-team {
+  display: flex;
+  justify-content: center;
+  gap: 36px;
+  flex-wrap: wrap;
+}
+
+.about-team__member {
+  text-align: center;
+  padding: 28px 24px;
+  background: var(--bg-card-alt);
+  border-radius: 12px;
+  border: 1px solid var(--border-light);
+  min-width: 180px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+
+.about-team__member:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
+.about-team__avatar {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #2d3e50, #1e2a38);
+  color: #fff;
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  letter-spacing: 1px;
+}
+
+.about-team__member h4 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.about-team__member p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* ─── Contact ─── */
+.about-contact {
+  text-align: center;
+  padding: 36px 24px;
+  background: var(--cta-bg);
+  border-radius: 12px;
+  color: #fff;
+}
+
+.about-contact h2 {
+  font-size: 1.35rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #fff;
+}
+
+.about-contact p {
+  font-size: 0.93rem;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.65;
+  margin: 0;
+}
+
+.about-contact a {
+  color: #61dafb;
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.about-contact a:hover {
+  text-decoration: underline;
+  color: #4ac0e8;
+}
+
+/* ─── Responsive ─── */
+@media (max-width: 700px) {
+  .about-container {
+    padding: 36px 20px;
+  }
+
+  .about-hero h1 {
+    font-size: 1.5rem;
+  }
+
+  .about-highlight {
+    flex-direction: column;
+    padding: 24px;
+    gap: 24px;
+  }
+
+  .about-highlight--reverse {
+    flex-direction: column;
+  }
+
+  .about-highlight__image {
+    flex: 0 0 auto;
+    max-width: 200px;
+    margin: 0 auto;
+  }
+
+  .about-features {
+    grid-template-columns: 1fr;
+  }
+}

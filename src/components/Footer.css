@@ -1,0 +1,15 @@
+/* Footer Styles */
+.App-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background: var(--nav-bg);
+  color: rgba(255, 255, 255, 0.7);
+  padding: 12px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 400;
+  box-shadow: 0 -2px 12px rgba(0, 0, 0, 0.15);
+  letter-spacing: 0.2px;
+}

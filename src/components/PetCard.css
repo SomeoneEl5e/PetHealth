@@ -1,0 +1,218 @@
+.pet-card {
+  width: 280px;
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm), 0 4px 14px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  position: relative;
+  border: 1px solid var(--border-light);
+  transition: box-shadow 0.2s ease;
+}
+
+.pet-card:hover {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08), 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+/* top action buttons */
+.pet-card__top-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  height: 30px;
+  margin-bottom: 6px;
+}
+
+.pet-card__top-actions--placeholder {
+  height: 30px;
+  margin-bottom: 6px;
+}
+
+.pet-card__edit-btn,
+.pet-card__delete-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, color 0.2s, transform 0.15s;
+}
+
+.pet-card__edit-btn {
+  background: rgba(30, 42, 56, 0.75);
+  color: #fff;
+}
+
+.pet-card__edit-btn:hover {
+  background: #1e2a38;
+  transform: scale(1.1);
+}
+
+.pet-card__delete-btn {
+  background: rgba(229, 57, 53, 0.8);
+  color: #fff;
+}
+
+.pet-card__delete-btn:hover {
+  background: #c62828;
+  transform: scale(1.1);
+}
+
+/* pet photo and header */
+.pet-photo {
+  margin-top: 12px;
+  width: 100%;
+  height: 180px;
+  border-radius: 8px;
+  background-color: var(--bg-tag);
+  border: 1.5px solid var(--border-input);
+  box-shadow: 0 1px 4px 0 rgba(60, 80, 120, 0.07);
+}
+
+.pet-photo--default {
+  object-fit: cover;
+}
+
+.pet-photo--user {
+  object-fit: cover;
+  object-position: top;
+}
+.pet-name {
+  margin: 14px 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.pet-details {
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+/* Sections */
+.pet-card__section {
+  margin-top: 12px;
+  text-align: left;
+}
+.pet-card__section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.pet-card__section-header h5 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+.pet-card__small-btn {
+  background: transparent;
+  border: none;
+  color: #61dafb;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pet-card__action-btns {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.pet-card__action {
+  background: transparent;
+  border: none;
+  color: #61dafb;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.pet-card__action:hover,
+.pet-card__small-btn:hover {
+  background: rgba(97, 218, 251, 0.1);
+  color: #4ac0e8;
+}
+
+/* AI Summary button */
+.pet-card__ai-btn {
+  display: block;
+  width: 100%;
+  padding: 8px 0;
+  margin-bottom: 8px;
+  border: 1.5px solid #61dafb;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(97, 218, 251, 0.08), rgba(97, 218, 251, 0.02));
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+.pet-card__ai-btn:hover {
+  background: linear-gradient(135deg, rgba(97, 218, 251, 0.18), rgba(97, 218, 251, 0.06));
+  box-shadow: 0 2px 8px rgba(97, 218, 251, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Tables */
+.pet-card__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  table-layout: auto;
+}
+.pet-card__table th,
+.pet-card__table td {
+  border: 1px solid var(--border-mid);
+  padding: 4px 6px;
+  white-space: nowrap;
+}
+.pet-card__table th {
+  background: var(--bg-tag);
+  color: var(--text-secondary);
+  text-align: left;
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+/* Last Visits — Reason column can wrap, others stay single-line */
+.pet-card__table--visits th:nth-child(3),
+.pet-card__table--visits td:nth-child(3) {
+  white-space: normal;
+}
+
+/* Last Vaccines — Date 30%, Vaccine 70% */
+.pet-card__table--vaccines th:nth-child(1),
+.pet-card__table--vaccines td:nth-child(1) {
+  width: 30%;
+}
+.pet-card__table--vaccines th:nth-child(2),
+.pet-card__table--vaccines td:nth-child(2) {
+  width: 70%;
+  white-space: normal;
+}
+
+.pet-card__empty {
+  font-size: 12px;
+  color: var(--text-faint);
+  padding: 8px;
+  text-align: center;
+}

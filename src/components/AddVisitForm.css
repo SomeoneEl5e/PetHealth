@@ -1,0 +1,132 @@
+
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.add-visit-form {
+  background: var(--bg-card);
+  padding: 28px 24px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  max-width: 450px;
+  width: 100%;
+  margin: 0;
+  position: relative;
+}
+
+.add-visit-form header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.add-visit-form header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.add-visit-form .close-btn {
+  border: none;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  color: #8a94a0;
+  transition: color 0.2s;
+}
+
+.add-visit-form .close-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Fields */
+.add-visit-form label {
+  display: block;
+  margin-bottom: 14px;
+  color: var(--text-secondary);
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.add-visit-form input[type="date"],
+.add-visit-form input[type="text"],
+.add-visit-form textarea {
+  width: 100%;
+  padding: 10px 12px;
+  margin-top: 6px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  font-size: 15px;
+  box-sizing: border-box;
+  font-family: inherit;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.add-visit-form input[type="date"]:focus,
+.add-visit-form input[type="text"]:focus,
+.add-visit-form textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+  background: var(--bg-input-focus);
+}
+
+.add-visit-form textarea {
+  resize: vertical;
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.btn-submit,
+.btn-cancel {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.btn-submit {
+  background-color: #2d3e50;
+  color: #fff;
+}
+
+.btn-submit:hover {
+  background-color: #1e2a38;
+}
+
+.btn-cancel {
+  background-color: #f4f6f8;
+  color: #4a5568;
+  border: 1px solid #e2e6ea;
+}
+
+.btn-cancel:hover {
+  background-color: #e2e6ea;
+}
+
+.btn-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

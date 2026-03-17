@@ -1,0 +1,85 @@
+*{
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+/* ─── Theme Variables ─── */
+:root {
+  --bg-page: #eef1f5;
+  --bg-card: #fff;
+  --bg-card-alt: #f8fafb;
+  --bg-input: #f8f9fb;
+  --bg-input-focus: #fff;
+  --bg-table-head: #2d3e50;
+  --bg-table-stripe: #f8f9fb;
+  --bg-table-hover: #edf0f4;
+  --bg-tag: #f4f6f8;
+  --bg-modal: #fff;
+
+  --text-primary: #1e2a38;
+  --text-secondary: #4a5568;
+  --text-muted: #6b7280;
+  --text-faint: #8a94a0;
+
+  --border-light: #e8ecf0;
+  --border-mid: #e2e6ea;
+  --border-input: #d1d5db;
+
+  --accent: #61dafb;
+  --accent-hover: #4fc3f7;
+  --accent-bg: rgba(97, 218, 251, 0.15);
+
+  --nav-bg: linear-gradient(135deg, #1e2a38 0%, #2d3e50 100%);
+  --cta-bg: linear-gradient(135deg, #2d3e50, #1e2a38);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.08), 0 4px 16px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.15);
+
+  --overlay: rgba(0, 0, 0, 0.35);
+}
+
+[data-theme="dark"] {
+  --bg-page: #0f1318;
+  --bg-card: #1a2028;
+  --bg-card-alt: #212830;
+  --bg-input: #242c36;
+  --bg-input-focus: #2a3340;
+  --bg-table-head: #1a2028;
+  --bg-table-stripe: #1e2630;
+  --bg-table-hover: #252e3a;
+  --bg-tag: #242c36;
+  --bg-modal: #1a2028;
+
+  --text-primary: #e2e8f0;
+  --text-secondary: #a0aec0;
+  --text-muted: #8a94a6;
+  --text-faint: #6b7688;
+
+  --border-light: #2d3748;
+  --border-mid: #2d3748;
+  --border-input: #3a4556;
+
+  --accent: #61dafb;
+  --accent-hover: #7ee3fc;
+  --accent-bg: rgba(97, 218, 251, 0.12);
+
+  --nav-bg: linear-gradient(135deg, #0f1318 0%, #1a2028 100%);
+  --cta-bg: linear-gradient(135deg, #1a2028, #0f1318);
+
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --shadow-md: 0 1px 3px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 4px 24px rgba(0, 0, 0, 0.4);
+
+  --overlay: rgba(0, 0, 0, 0.6);
+}
+
+body{
+  background-color: var(--bg-page);
+  direction: ltr;
+  width: 100vw;
+  font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}

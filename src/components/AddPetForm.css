@@ -1,0 +1,95 @@
+.add-pet-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.add-pet-form {
+  background: var(--bg-card);
+  padding: 28px 24px;
+  border-radius: 14px;
+  box-shadow: var(--shadow-lg);
+  max-width: 420px;
+  margin: 0;
+  width: 100%;
+  position: relative;
+}
+
+.photo-upload {
+  text-align: center;
+  margin-bottom: 16px;
+}
+
+.preview-img {
+  width: 120px;
+  height: 120px;
+  object-fit: cover;
+  border-radius: 50%;
+  background: var(--bg-tag);
+  border: 3px solid var(--border-light);
+}
+
+.photo-upload input[type="file"] {
+  margin-top: 8px;
+}
+
+input, select {
+  width: 100%;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border-input);
+  border-radius: 8px;
+  font-size: 15px;
+  background: var(--bg-input);
+  color: var(--text-primary);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-bg);
+  background: var(--bg-input-focus);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.btn-submit, .btn-cancel {
+  padding: 10px 22px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.btn-submit {
+  background-color: #2d3e50;
+  color: #fff;
+}
+
+.btn-submit:hover {
+  background-color: #1e2a38;
+}
+
+.btn-cancel {
+  background-color: var(--bg-tag);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-mid);
+}
+
+.btn-cancel:hover {
+  background-color: var(--border-mid);
+}

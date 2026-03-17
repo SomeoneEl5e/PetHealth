@@ -1,0 +1,87 @@
+.edit-profile-container {
+  max-width: 420px;
+  margin: 48px auto;
+  padding: 36px 32px;
+  background-color: var(--bg-card);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+}
+
+.edit-profile-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-align: center;
+  margin-bottom: 24px;
+}
+
+.edit-profile-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.edit-profile-msg {
+  text-align: center;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.edit-profile-msg.success {
+  background: #e6f9ed;
+  color: #1a7a3a;
+}
+
+.edit-profile-msg.error {
+  background: #fde8e8;
+  color: #b91c1c;
+}
+
+.edit-profile-divider {
+  border: none;
+  border-top: 1px solid var(--border-mid);
+  margin: 20px 0 12px;
+}
+
+.edit-profile-hint {
+  font-size: 13px;
+  color: var(--text-faint);
+  margin-bottom: 12px;
+}
+
+.edit-profile-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.btn-back,
+.btn-save {
+  flex: 1;
+  padding: 11px 0;
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.btn-back {
+  background: var(--border-mid);
+  color: var(--text-primary);
+}
+
+.btn-back:hover {
+  background: var(--border-input);
+}
+
+.btn-save {
+  background: #1e2a38;
+  color: #fff;
+}
+
+.btn-save:hover {
+  background: #2d3e50;
+}
