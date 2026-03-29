@@ -1,3 +1,26 @@
+/**
+ * PetCard Component
+ * -----------------
+ * Displays a single pet's profile card with:
+ * - Photo (with defaults for dogs/cats if no custom photo)
+ * - Name, breed, age, gender
+ * - Edit/delete buttons (only shown in edit mode)
+ * - "Add Visit" and "Add Vaccine" action buttons
+ * - "AI Health Summary" button
+ * - Recent visits table (last 3, sorted newest first)
+ * - Recent vaccines table (last 3, sorted newest first)
+ * - "Show All" buttons to open full history modals
+ *
+ * Props:
+ * - photoUrl, name, breed, age, type, gender: basic pet info
+ * - vetVisits, vaccines: arrays of health records
+ * - onDelete, onEdit: pet management callbacks
+ * - editMode: boolean to show/hide edit/delete buttons
+ * - onShowAllVisits, onShowAllVaccines: open history modals
+ * - petId: used for API calls
+ * - onOpenAddVaccine, onOpenAddVisit: open add-record forms
+ * - onAiSummary: trigger AI health analysis
+ */
 import React from 'react';
 import './PetCard.css';
 

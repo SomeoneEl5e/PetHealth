@@ -1,3 +1,20 @@
+/**
+ * User Model
+ * ----------
+ * The central model for the application. Each user has:
+ * - Personal info (name, email, password, DOB, city)
+ * - A role determining their access level (user/editor/sub-admin/admin)
+ * - An embedded array of pets (subdocuments using petSchema)
+ *
+ * Validation rules:
+ * - Names: letters only, min 3 characters
+ * - Email: standard format, must be unique
+ * - Password: min 8 chars, requires uppercase + lowercase + number
+ * - Age: must be 18+ years old
+ *
+ * Role hierarchy: user < editor < sub-admin < admin
+ * Uses mongoose.models.User check to prevent model recompilation errors.
+ */
 const mongoose = require("mongoose");
 const petSchema = require("./pets.js");
 

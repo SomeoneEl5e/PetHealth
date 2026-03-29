@@ -1,14 +1,40 @@
+/**
+ * Admin Page — Management Dashboard
+ * ==================================
+ * The main management interface for editors, sub-admins, and admins.
+ *
+ * Tabs (shown based on role):
+ * 1. Vaccine Types — CRUD for master vaccine list (all staff)
+ * 2. Pet Types — CRUD for pet type categories (all staff)
+ * 3. Breeds — CRUD for breeds linked to pet types (all staff)
+ * 4. Users — View/edit/delete users, reset passwords, pass admin role (sub-admin/admin)
+ * 5. User Statistics — Population-level analytics with charts and filters (sub-admin/admin)
+ * 6. Activity — Staff performance tracking and audit trail (sub-admin/admin)
+ *
+ * Features:
+ * - Sortable tables with column header click-to-sort
+ * - Status filtering (active/disabled/pending) for entity tables
+ * - Date range filtering for creation time
+ * - Editor restrictions: can only modify own items within 24h
+ * - Statistics charts: donut, bar, and column visualizations
+ * - Activity breakdown by staff member, action type, and target
+ *
+ * All data operations go through /api/admin endpoints.
+ */
 import React, { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { API_BASE } from "../config";
 import "./Admin.css";
 
+// API base URL for admin endpoints
 const API = `${API_BASE}/api/admin`;
 
+/** Helper: Retrieve JWT token from session storage */
 function getToken() {
   return sessionStorage.getItem("token");
 }
 
+/** Helper: Build Authorization and Content-Type headers for API requests */
 function authHeaders() {
   return {
     Authorization: `Bearer ${getToken()}`,
@@ -17,25 +43,32 @@ function authHeaders() {
 }
 
 export default function Admin() {
+  // ─── Role-based access flags ──────────────────────────────
   const role = sessionStorage.getItem("role");
-  const canManage = ["editor", "sub-admin", "admin"].includes(role);
-  const canViewUsers = ["sub-admin", "admin"].includes(role);
+  const canManage = ["editor", "sub-admin", "admin"].includes(role);     // Can access admin panel
+  const canViewUsers = ["sub-admin", "admin"].includes(role);            // Can see Users/Stats tabs
   const isAdmin = role === "admin";
   const isSubAdmin = role === "sub-admin";
   const isEditor = role === "editor";
   const userId = sessionStorage.getItem("userId");
+
+  /** Check if the current user (editor) can modify a specific item.
+   *  Editors can only edit their own items within 24 hours of creation. */
   const canEditItem = (item) => {
     if (!isEditor) return true;
     if (!item.createdBy || item.createdBy !== userId) return false;
     if (!item.createdAt) return false;
     return Date.now() - new Date(item.createdAt).getTime() <= 24 * 60 * 60 * 1000;
   };
+
+  // ─── Tab and filter state ─────────────────────────────────
   const [tab, setTab] = useState("vaccines");
-  const [dateFrom, setDateFrom] = useState("");
-  const [dateTo, setDateTo] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");          // Creation date filter: start
+  const [dateTo, setDateTo] = useState("");              // Creation date filter: end
+  const [statusFilter, setStatusFilter] = useState("all"); // "all", "active", "disabled", "pending"
   const now = new Date();
   const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  /** Filter items by creation date range (used for admin/sub-admin date filtering) */
   const canFilter = isAdmin || isSubAdmin;
   const filterByTime = (item) => {
     if (!canFilter) return true;
@@ -51,11 +84,13 @@ export default function Admin() {
     return true;
   };
 
-  // ─── sort state
+  // ─── Table sort state ─────────────────────────────────────
+  // Resets to default (createdAt desc) when switching tabs
   const [sortCol, setSortCol] = useState("createdAt");
   const [sortDir, setSortDir] = useState("desc");
   useEffect(() => { setSortCol("createdAt"); setSortDir("desc"); setStatusFilter("all"); }, [tab]);
 
+  /** Toggle sort direction on a column, or switch to a new sort column */
   const toggleSort = (col) => {
     if (sortCol === col) {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
@@ -65,6 +100,8 @@ export default function Admin() {
     }
   };
 
+  /** Sort an array of items by the current sortCol/sortDir.
+   *  Secondary sort by createdAt (desc) when primary values are equal. */
   const sortData = (items) => [...items].sort((a, b) => {
     let valA, valB;
     if (sortCol === "createdAt") {
@@ -84,43 +121,42 @@ export default function Admin() {
     return 0;
   });
 
+  /** SortTh — Clickable table header cell with sort indicator */
   const SortTh = ({ col, children }) => (
     <th className={`sortable-th${sortCol === col ? " sorted" : ""}`} onClick={() => toggleSort(col)}>
       {children}<span className="sort-arrow">{sortCol === col ? (sortDir === "asc" ? " ▲" : " ▼") : ""}</span>
     </th>
   );
 
-  // ─── vaccine types state
+  // ─── Vaccine types state ──────────────────────────────────
   const [vaccines, setVaccines] = useState([]);
   const [vaccForm, setVaccForm] = useState({ Name: "", Timing: "", PetType: [] });
   const [editingVacc, setEditingVacc] = useState(null);
 
-  // ─── users state
+  // ─── Users state ──────────────────────────────────────────
   const [users, setUsers] = useState([]);
   const [editingUser, setEditingUser] = useState(null);
   const [userForm, setUserForm] = useState({ firstName: "", lastName: "", email: "", role: "user", password: "" });
-  const [expandedUser, setExpandedUser] = useState(null);
-  const [expandedPetVisits, setExpandedPetVisits] = useState(null);
-  const [expandedPetVaccines, setExpandedPetVaccines] = useState(null);
+  const [expandedUser, setExpandedUser] = useState(null);       // User ID shown expanded in table
+  const [expandedPetVisits, setExpandedPetVisits] = useState(null);   // Pet ID showing visit details
+  const [expandedPetVaccines, setExpandedPetVaccines] = useState(null); // Pet ID showing vaccine details
 
-  // ─── summary state (removed - merged into users)
-
-  // ─── pet types state
+  // ─── Pet types state ──────────────────────────────────────
   const [petTypes, setPetTypes] = useState([]);
   const [ptForm, setPtForm] = useState({ petType: "" });
   const [editingPt, setEditingPt] = useState(null);
 
-  // ─── breeds state
+  // ─── Breeds state ─────────────────────────────────────────
   const [breeds, setBreeds] = useState([]);
   const [breedForm, setBreedForm] = useState({ breed: "", type: "" });
   const [editingBreed, setEditingBreed] = useState(null);
 
-  // ─── statistics state
+  // ─── Statistics state ─────────────────────────────────────
   const [stats, setStats] = useState(null);
   const [statsLoading, setStatsLoading] = useState(false);
-  const [petsOnly, setPetsOnly] = useState(false);
+  const [petsOnly, setPetsOnly] = useState(false);  // Filter to show only users with pets
 
-  // ─── statistics filter state
+  // ─── Statistics filter options ─────────────────────────────
   const [statsFilterOptions, setStatsFilterOptions] = useState(null);
   const [statsFilters, setStatsFilters] = useState({
     petTypes: [], cities: [], genders: [], breeds: [],
@@ -129,7 +165,7 @@ export default function Admin() {
   });
   const [filtersExpanded, setFiltersExpanded] = useState(false);
 
-  // ─── activity state
+  // ─── Activity tracking state ──────────────────────────────
   const [activity, setActivity] = useState(null);
   const [activityLoading, setActivityLoading] = useState(false);
   const [activityRoles, setActivityRoles] = useState(["editor", "sub-admin", "admin"]);
@@ -137,7 +173,7 @@ export default function Admin() {
   const [activityPeriodFrom, setActivityPeriodFrom] = useState("");
   const [activityPeriodTo, setActivityPeriodTo] = useState("");
 
-  // ── fetch helpers
+  // ─── Data fetching helpers ────────────────────────────────
   const fetchVaccines = async () => {
     const res = await fetch(`${API}/vaccines`, { headers: authHeaders() });
     if (res.ok) setVaccines(await res.json());

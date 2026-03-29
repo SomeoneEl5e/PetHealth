@@ -1,3 +1,27 @@
+/**
+ * Admin Router — Management Dashboard API
+ * ========================================
+ * Prefix: /api/admin
+ *
+ * Provides CRUD operations for the management dashboard, including:
+ * - Vaccine Types: create, edit, toggle enable/disable, delete
+ * - Pet Types: create, edit, toggle enable/disable, delete
+ * - Breeds: create, edit, toggle enable/disable, delete
+ * - Users: view, edit, delete, reset password, pass admin role
+ * - Summary: overview of all users and their pets
+ * - Statistics: population-level analytics with filtering
+ * - Activity Stats: staff action audit trail
+ *
+ * Access Control:
+ * - All routes require JWT authentication
+ * - Minimum role required: "editor" (enforced by middleware)
+ * - Editor: can only modify own items within 24 hours of creation
+ * - Sub-admin: can view users (other sub-admins only) and statistics
+ * - Admin: full access to all management features
+ *
+ * Every create/edit/delete/toggle action is logged to the ActivityLog
+ * collection for audit trail purposes.
+ */
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -8,10 +32,16 @@ const Breed = require("../models/breed");
 const ActivityLog = require("../models/activityLog");
 const router = express.Router();
 
+// Roles that can access the admin panel
 const MANAGE_ROLES = ["editor", "sub-admin", "admin"];
+// Roles that can view user lists and statistics
 const USER_VIEW_ROLES = ["sub-admin", "admin"];
 
-// Helper: fetch list and attach createdByName
+/**
+ * Helper: Fetch documents and enrich them with the creator's full name.
+ * Maps each document's `createdBy` ObjectId to a human-readable name
+ * by batch-querying the User collection. Returns plain JS objects.
+ */
 async function withCreator(query) {
   const docs = await query.lean();
   const ids = [...new Set(docs.map(d => d.createdBy).filter(Boolean).map(String))];
@@ -21,7 +51,9 @@ async function withCreator(query) {
   return docs.map(d => ({ ...d, createdByName: d.createdBy ? (map[String(d.createdBy)] || "Unknown") : "Unknown" }));
 }
 
-// Auth middleware — attaches userId and userRole, requires at least editor
+// ─── Authentication Middleware ──────────────────────────────
+// Verifies JWT, fetches the user's role, and requires at least "editor" role.
+// Attaches req.userId and req.userRole for downstream route handlers.
 router.use(async (req, res, next) => {
   try {
     const header = req.headers.authorization || "";
@@ -41,8 +73,11 @@ router.use(async (req, res, next) => {
 });
 
 // ─── VACCINE TYPES ──────────────────────────────────────────
+// CRUD operations for the master list of vaccine types.
+// Editors can only modify their own items within 24 hours.
+// All mutations are logged to ActivityLog.
 
-// GET all vaccine types
+// GET /api/admin/vaccines — Retrieve all vaccine types with creator names
 router.get("/vaccines", async (req, res) => {
   try {
     const list = await withCreator(Vaccine.find().sort({ createdAt: -1 }));
@@ -53,7 +88,7 @@ router.get("/vaccines", async (req, res) => {
   }
 });
 
-// POST new vaccine type
+// POST /api/admin/vaccines — Create a new vaccine type
 router.post("/vaccines", async (req, res) => {
   try {
     const { Name, Timing, PetType } = req.body;
@@ -74,7 +109,7 @@ router.post("/vaccines", async (req, res) => {
   }
 });
 
-// PUT edit vaccine type
+// PUT /api/admin/vaccines/:id — Edit a vaccine type (editor: own items within 24h only)
 router.put("/vaccines/:id", async (req, res) => {
   try {
     const { Name, Timing, PetType } = req.body;
@@ -105,7 +140,7 @@ router.put("/vaccines/:id", async (req, res) => {
   }
 });
 
-// PATCH toggle vaccine disabled state
+// PATCH /api/admin/vaccines/:id/toggle — Toggle vaccine enabled/disabled state
 router.patch("/vaccines/:id/toggle", async (req, res) => {
   try {
     const vaccine = await Vaccine.findById(req.params.id);
@@ -130,7 +165,7 @@ router.patch("/vaccines/:id/toggle", async (req, res) => {
   }
 });
 
-// DELETE vaccine type (only within 24 hours of creation)
+// DELETE /api/admin/vaccines/:id — Delete a vaccine (only within 24h of creation)
 router.delete("/vaccines/:id", async (req, res) => {
   try {
     const vaccine = await Vaccine.findById(req.params.id);
@@ -154,8 +189,11 @@ router.delete("/vaccines/:id", async (req, res) => {
 });
 
 // ─── USERS ──────────────────────────────────────────────────
+// User management endpoints (view/edit/delete/reset-password/pass-role).
+// User viewing requires sub-admin or admin role.
+// User editing/deleting requires admin role.
 
-// GET all users (without passwords) — admin and sub-admin only
+// GET /api/admin/users — List all users (sub-admin sees only other sub-admins)
 router.get("/users", async (req, res) => {
   try {
     if (!USER_VIEW_ROLES.includes(req.userRole)) {
@@ -173,7 +211,8 @@ router.get("/users", async (req, res) => {
   }
 });
 
-// PUT edit user — admin only
+// PUT /api/admin/users/:id — Edit a user's profile/role (admin only)
+// Enforces: max 1 admin, max 3 sub-admins, cannot change own role
 router.put("/users/:id", async (req, res) => {
   try {
     if (req.userRole !== "admin") {
@@ -214,7 +253,7 @@ router.put("/users/:id", async (req, res) => {
   }
 });
 
-// DELETE user — admin only, cannot delete self
+// DELETE /api/admin/users/:id — Remove a user account (admin only, cannot delete self)
 router.delete("/users/:id", async (req, res) => {
   try {
     if (req.userRole !== "admin") {
@@ -234,7 +273,8 @@ router.delete("/users/:id", async (req, res) => {
   }
 });
 
-// POST reset password — admin and sub-admin
+// POST /api/admin/users/:id/reset-password — Reset a user's password
+// Sub-admin can only reset other sub-admin passwords
 router.post("/users/:id/reset-password", async (req, res) => {
   try {
     if (!USER_VIEW_ROLES.includes(req.userRole)) {
@@ -257,7 +297,9 @@ router.post("/users/:id/reset-password", async (req, res) => {
   }
 });
 
-// POST pass admin role to another user — admin only
+// POST /api/admin/pass-role — Transfer admin role to another user
+// Current admin is demoted to sub-admin; target is promoted to admin.
+// Enforces maximum of 3 sub-admins (since current admin becomes one).
 router.post("/pass-role", async (req, res) => {
   try {
     if (req.userRole !== "admin") {
@@ -294,8 +336,9 @@ router.post("/pass-role", async (req, res) => {
 });
 
 // ─── SUMMARY ────────────────────────────────────────────────
+// Flattened view of all users and their pets for overview tables.
 
-// GET all users with their pets (summary table)
+// GET /api/admin/summary — List all pets with owner info
 router.get("/summary", async (req, res) => {
   try {
     const users = await User.find({}, "-password").sort({ firstName: 1 });
@@ -323,8 +366,10 @@ router.get("/summary", async (req, res) => {
 });
 
 // ─── STATISTICS ─────────────────────────────────────────────
+// Population-level analytics with comprehensive filtering.
+// Sub-admin and admin only.
 
-// GET available filter options for statistics
+// GET /api/admin/statistics/filters — Available filter options for the statistics dashboard
 router.get("/statistics/filters", async (req, res) => {
   try {
     if (!USER_VIEW_ROLES.includes(req.userRole)) {
@@ -615,8 +660,9 @@ router.get("/statistics", async (req, res) => {
 });
 
 // ─── PET TYPES ──────────────────────────────────────────────
+// CRUD operations for pet types (same pattern as vaccine types).
 
-// GET all pet types
+// GET /api/admin/petTypes — List all pet types with creator names
 router.get("/petTypes", async (req, res) => {
   try {
     const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
@@ -627,7 +673,7 @@ router.get("/petTypes", async (req, res) => {
   }
 });
 
-// POST new pet type
+// POST /api/admin/petTypes — Create a new pet type
 router.post("/petTypes", async (req, res) => {
   try {
     const { petType } = req.body;
@@ -644,7 +690,7 @@ router.post("/petTypes", async (req, res) => {
   }
 });
 
-// PUT edit pet type
+// PUT /api/admin/petTypes/:id — Edit a pet type name
 router.put("/petTypes/:id", async (req, res) => {
   try {
     const { petType } = req.body;
@@ -671,7 +717,7 @@ router.put("/petTypes/:id", async (req, res) => {
   }
 });
 
-// PATCH toggle pet type disabled state
+// PATCH /api/admin/petTypes/:id/toggle — Toggle pet type enabled/disabled
 router.patch("/petTypes/:id/toggle", async (req, res) => {
   try {
     const doc = await PetType.findById(req.params.id);
@@ -695,7 +741,7 @@ router.patch("/petTypes/:id/toggle", async (req, res) => {
   }
 });
 
-// DELETE pet type (only within 24 hours of creation)
+// DELETE /api/admin/petTypes/:id — Delete a pet type (within 24h only)
 router.delete("/petTypes/:id", async (req, res) => {
   try {
     const doc = await PetType.findById(req.params.id);
@@ -720,8 +766,9 @@ router.delete("/petTypes/:id", async (req, res) => {
 });
 
 // ─── BREEDS ──────────────────────────────────────────────────
+// CRUD operations for breeds (same pattern as vaccine types).
 
-// GET all breeds
+// GET /api/admin/breeds — List all breeds with creator names
 router.get("/breeds", async (req, res) => {
   try {
     const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
@@ -732,7 +779,7 @@ router.get("/breeds", async (req, res) => {
   }
 });
 
-// POST new breed
+// POST /api/admin/breeds — Create a new breed
 router.post("/breeds", async (req, res) => {
   try {
     const { breed, type } = req.body;
@@ -749,7 +796,7 @@ router.post("/breeds", async (req, res) => {
   }
 });
 
-// PUT edit breed
+// PUT /api/admin/breeds/:id — Edit a breed's name/type
 router.put("/breeds/:id", async (req, res) => {
   try {
     const { breed, type } = req.body;
@@ -777,7 +824,7 @@ router.put("/breeds/:id", async (req, res) => {
   }
 });
 
-// PATCH toggle breed disabled state
+// PATCH /api/admin/breeds/:id/toggle — Toggle breed enabled/disabled
 router.patch("/breeds/:id/toggle", async (req, res) => {
   try {
     const doc = await Breed.findById(req.params.id);
@@ -801,7 +848,7 @@ router.patch("/breeds/:id/toggle", async (req, res) => {
   }
 });
 
-// DELETE breed (only within 24 hours of creation)
+// DELETE /api/admin/breeds/:id — Delete a breed (within 24h only)
 router.delete("/breeds/:id", async (req, res) => {
   try {
     const doc = await Breed.findById(req.params.id);
@@ -826,7 +873,11 @@ router.delete("/breeds/:id", async (req, res) => {
 });
 
 // ─── ACTIVITY STATS ─────────────────────────────────────────
+// Staff performance tracking and audit trail.
+// Aggregates action counts by user, target type, and action type.
+// Admin sees all staff; sub-admin sees editors and self only.
 
+// GET /api/admin/activity-stats — Staff activity breakdown with optional period filter
 router.get("/activity-stats", async (req, res) => {
   try {
     if (!USER_VIEW_ROLES.includes(req.userRole)) {

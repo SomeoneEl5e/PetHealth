@@ -1,3 +1,21 @@
+/**
+ * HistoryModal Component
+ * ----------------------
+ * A full-screen modal overlay displaying the complete history of
+ * vet visits or vaccinations for a specific pet.
+ *
+ * Renders a sortable table (newest first) with all relevant fields.
+ * For visits: includes edit/delete action buttons per row.
+ * For vaccines: read-only display.
+ *
+ * Props:
+ * - petName: name shown in the modal header
+ * - entries: array of visit or vaccine records
+ * - type: "visits" or "vaccines" (determines table columns)
+ * - onClose: callback to dismiss the modal
+ * - onEditVisit: (visit) => void — edit handler (visits only)
+ * - onDeleteVisit: (visitId) => void — delete handler (visits only)
+ */
 import React from 'react';
 import './HistoryModal.css';
 

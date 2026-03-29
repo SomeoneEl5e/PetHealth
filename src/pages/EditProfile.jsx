@@ -1,3 +1,17 @@
+/**
+ * Edit Profile Page
+ * -----------------
+ * Allows authenticated users to update their personal information.
+ *
+ * Editable fields:
+ * - First name, last name, email
+ * - Birth date (day/month/year dropdowns)
+ * - City (search + select from Israeli Government API)
+ * - Password change (requires current password verification)
+ *
+ * Client-side validation mirrors the signup form rules.
+ * On success: updates sessionStorage firstName and redirects to /profile.
+ */
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../config";

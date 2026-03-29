@@ -1,3 +1,17 @@
+/**
+ * Home Page
+ * ---------
+ * The public landing page for PetHealth.
+ *
+ * Sections:
+ * 1. Hero — main headline, subtitle, and hero image
+ * 2. Key Features — grid of 6 FeatureItem cards
+ * 3. AI Highlight — showcases AI-powered health analysis capabilities
+ * 4. Management Highlight — showcases association management tools
+ * 5. CTA — call-to-action to encourage sign up
+ *
+ * All images are hosted on Cloudinary (static assets).
+ */
 import React from "react";
 import "./Home.css";
 import FeatureItem from "../components/FeatureItem";

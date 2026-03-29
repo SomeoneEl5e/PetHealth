@@ -1,3 +1,24 @@
+/**
+ * Pets Router — Pet Management & Health Records
+ * -----------------------------------------------
+ * Prefix: /api/pets
+ *
+ * Full CRUD for pets, plus endpoints for managing vet visits and vaccines.
+ * All routes require JWT authentication. Pets are stored as subdocuments
+ * within the User document (not in a separate collection).
+ *
+ * Pet photo uploads are handled via Multer + Cloudinary.
+ *
+ * Endpoints:
+ * - GET    /api/pets                         — Get all of the user's pets
+ * - POST   /api/pets                         — Add a new pet (with optional photo)
+ * - PUT    /api/pets/:petId                   — Edit pet details
+ * - DELETE /api/pets/:petId                   — Delete a pet
+ * - POST   /api/pets/:petId/visits            — Add a vet visit
+ * - PUT    /api/pets/:petId/visits/:visitId    — Edit a vet visit
+ * - DELETE /api/pets/:petId/visits/:visitId    — Delete a vet visit
+ * - POST   /api/pets/:petId/vaccines          — Add a vaccine record
+ */
 const express  = require("express");
 const jwt      = require("jsonwebtoken");
 const multer   = require("multer");
@@ -7,14 +28,15 @@ const User     = require("../models/user");
 const Pet      = require('../models/pets');
 const router   = express.Router();
 
-// Cloudinary config
+// ─── Cloudinary Configuration ────────────────────────────
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key:    process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
-// auth middleware: expects header "Authorization: Bearer <token>"
+// ─── JWT Authentication Middleware ──────────────────────────
+// All pet routes require a valid Bearer token
 router.use((req, res, next) => {
   try {
     const header = req.headers.authorization || "";
@@ -28,7 +50,9 @@ router.use((req, res, next) => {
   }
 });
 
-// multer + Cloudinary storage
+// ─── Multer + Cloudinary Storage Setup ────────────────────
+// Photos are uploaded to the "pethealth" folder in Cloudinary
+// with automatic resizing (max 500x500) and quality optimization
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
@@ -39,7 +63,7 @@ const storage = new CloudinaryStorage({
 });
 const upload = multer({ storage });
 
-// GET this user’s pets (from the embedded array)
+// GET /api/pets — Retrieve all pets for the authenticated user
 router.get("/", async (req, res) => {
   try {
     const user = await User.findById(req.userId, "pets");
@@ -51,7 +75,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-// POST pet with photo
+// POST /api/pets — Add a new pet (multipart form with optional photo)
 router.post("/", upload.single("photo"), async (req, res) => {
   try {
     console.log('BODY:', req.body);
@@ -63,11 +87,13 @@ router.post("/", upload.single("photo"), async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    // Get the Cloudinary URL from the uploaded file (if any)
     let photoUrl = "";
     if (req.file) {
       photoUrl = req.file.path;
     }
 
+    // Find the user and push the new pet into their embedded pets array
     const user = await User.findById(req.userId);
     if (!user) {
       console.log("User not found for userId:", req.userId);
@@ -91,7 +117,7 @@ router.post("/", upload.single("photo"), async (req, res) => {
   }
 });
 
-// PUT /api/pets/:petId — edit pet details
+// PUT /api/pets/:petId — Edit an existing pet's details (with optional new photo)
 router.put("/:petId", upload.single("photo"), async (req, res) => {
   try {
     const { petId } = req.params;
@@ -99,9 +125,11 @@ router.put("/:petId", upload.single("photo"), async (req, res) => {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // Find the specific pet subdocument by its ID
     const pet = user.pets.id(petId);
     if (!pet) return res.status(404).json({ message: "Pet not found" });
 
+    // Update only the fields that were provided
     if (name) pet.name = name;
     if (type) pet.type = type;
     if (breed) pet.breed = breed;
@@ -117,7 +145,7 @@ router.put("/:petId", upload.single("photo"), async (req, res) => {
   }
 });
 
-// DELETE /api/pets/:petId
+// DELETE /api/pets/:petId — Remove a pet from the user's pets array
 // Returns the updated pets array after deletion
 router.delete("/:petId", async (req, res) => {
   try {
@@ -125,13 +153,13 @@ router.delete("/:petId", async (req, res) => {
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
-    // find subdoc by its _id and remove it
+    // Find the subdocument by its _id and remove it
     const petSubdoc = user.pets.id(petId);
     if (!petSubdoc) {
       return res.status(404).json({ message: "Pet not found" });
     }
-    await petSubdoc.deleteOne(); // Properly deletes the subdocument in Mongoose 6+
-    await user.save();  // write the change back to Mongo
+    await petSubdoc.deleteOne(); // Mongoose 6+ subdocument removal
+    await user.save();            // Persist the change to MongoDB
 
     // return the updated array
     res.json(user.pets);
@@ -141,7 +169,7 @@ router.delete("/:petId", async (req, res) => {
   }
 });
 
-// POST /api/pets/:petId/visits - Add a vet visit
+// POST /api/pets/:petId/visits — Add a new vet visit to a pet's record
 router.post("/:petId/visits", async (req, res) => {
   try {
     const { petId } = req.params;
@@ -174,7 +202,7 @@ router.post("/:petId/visits", async (req, res) => {
   }
 });
 
-// POST /api/pets/:petId/vaccines - Add a vaccine
+// POST /api/pets/:petId/vaccines — Add a vaccination record to a pet
 router.post("/:petId/vaccines", async (req, res) => {
   try {
     const { petId } = req.params;
@@ -207,7 +235,7 @@ router.post("/:petId/vaccines", async (req, res) => {
   }
 });
 
-// PUT /api/pets/:petId/visits/:visitId - Edit a vet visit
+// PUT /api/pets/:petId/visits/:visitId — Edit an existing vet visit
 router.put("/:petId/visits/:visitId", async (req, res) => {
   try {
     const { petId, visitId } = req.params;
@@ -241,7 +269,7 @@ router.put("/:petId/visits/:visitId", async (req, res) => {
   }
 });
 
-// DELETE /api/pets/:petId/visits/:visitId - Delete a vet visit
+// DELETE /api/pets/:petId/visits/:visitId — Remove a vet visit from a pet's record
 router.delete("/:petId/visits/:visitId", async (req, res) => {
   try {
     const { petId, visitId } = req.params;

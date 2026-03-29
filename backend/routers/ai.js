@@ -1,3 +1,22 @@
+/**
+ * AI Router — Pet Health Summary
+ * ------------------------------
+ * POST /api/ai/pet-summary
+ *
+ * Uses OpenAI's GPT-4o-mini model to generate an AI health summary
+ * for a specific pet. The prompt includes the pet's complete profile,
+ * vet visit history, vaccination records, and the master list of
+ * available vaccines for that pet type.
+ *
+ * The AI returns a markdown-formatted report with:
+ * 1. Health Summary — overview based on visit history
+ * 2. Upcoming Vaccines — due or overdue vaccines
+ * 3. Recommended Appointments — when to visit the vet next
+ * 4. Health Tips — breed, age, and history-specific advice
+ *
+ * Requires authentication (JWT). Any logged-in user can generate
+ * summaries for their own pets.
+ */
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const OpenAI = require("openai");
@@ -7,7 +26,8 @@ const Vaccine = require("../models/vaccine");
 const router = express.Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Auth middleware
+// ─── JWT Authentication Middleware ──────────────────────────
+// All AI routes require a valid Bearer token
 router.use((req, res, next) => {
   try {
     const header = req.headers.authorization || "";
@@ -21,26 +41,29 @@ router.use((req, res, next) => {
   }
 });
 
-// POST /api/ai/pet-summary
+// POST /api/ai/pet-summary — Generate AI health report for a pet
 router.post("/pet-summary", async (req, res) => {
   try {
     const { petId } = req.body;
     if (!petId) return res.status(400).json({ message: "petId is required" });
 
+    // Fetch the user and their specific pet
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const pet = user.pets.id(petId);
     if (!pet) return res.status(404).json({ message: "Pet not found" });
 
-    // Gather available vaccines for this pet type
+    // Fetch the master vaccine list for this pet's type
     const availableVaccines = await Vaccine.find({
       PetType: pet.type,
       disabled: { $ne: true }
     }).lean();
 
+    // Calculate the pet's age in years for the AI prompt
     const ageYears = ((Date.now() - new Date(pet.birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000)).toFixed(1);
 
+    // Format vet visit history as readable text for the AI
     const visitsSummary = pet.vetVisits.length
       ? pet.vetVisits
           .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -48,6 +71,7 @@ router.post("/pet-summary", async (req, res) => {
           .join("\n")
       : "No vet visits recorded.";
 
+    // Format vaccination history for the AI
     const vaccinesSummary = pet.vaccines.length
       ? pet.vaccines
           .sort((a, b) => new Date(b.date) - new Date(a.date))
@@ -55,10 +79,12 @@ router.post("/pet-summary", async (req, res) => {
           .join("\n")
       : "No vaccines recorded.";
 
+    // List all available vaccines with their recommended intervals
     const availableVaccinesList = availableVaccines.length
       ? availableVaccines.map(v => `- ${v.Name} (every ${v.Timing} months)`).join("\n")
       : "No vaccines defined for this pet type.";
 
+    // Construct the AI prompt with all pet data
     const prompt = `You are a veterinary health assistant. Analyze the following pet's data and provide:
 
 1. **Health Summary** – A brief overview of the pet's current health status based on visit history and vaccinations.
@@ -86,17 +112,19 @@ Today's date: ${new Date().toLocaleDateString()}
 
 Please be concise and practical. Use markdown formatting with headers.`;
 
+    // Send prompt to OpenAI GPT-4o-mini and return the generated summary
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [{ role: "user", content: prompt }],
       max_tokens: 1000,
-      temperature: 0.7,
+      temperature: 0.7,  // Balanced creativity/consistency
     });
 
     const summary = completion.choices[0].message.content;
     res.json({ summary });
   } catch (err) {
     console.error("AI summary error:", err);
+    // Handle specific OpenAI API errors with user-friendly messages
     if (err.status === 401 || err.code === "invalid_api_key") {
       return res.status(503).json({ message: "AI service not configured. Please set a valid OpenAI API key." });
     }

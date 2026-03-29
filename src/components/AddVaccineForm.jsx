@@ -1,3 +1,20 @@
+/**
+ * AddVaccineForm Component
+ * ------------------------
+ * A modal form for recording a vaccination for a specific pet.
+ *
+ * On mount, fetches the master list of vaccines applicable to the pet's type
+ * from the public /api/vaccines endpoint. The user selects a vaccine, enters
+ * the date, vet info, and optional notes.
+ *
+ * Date is restricted to today or earlier (no future vaccines).
+ *
+ * Props:
+ * - pet: the pet object ({ _id, name, type })
+ * - onCancel: callback to close the form
+ * - onSave: (petId, vaccineData) => void
+ * - apiBase: (optional) API base URL override
+ */
 import React, { useEffect, useState } from "react";
 import { API_BASE } from "../config";
 import "./AddVaccineForm.css";

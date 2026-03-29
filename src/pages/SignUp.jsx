@@ -1,3 +1,18 @@
+/**
+ * Sign Up Page
+ * ------------
+ * New user registration form with client-side validation.
+ *
+ * Features:
+ * - Name validation (letters only, min 3 chars)
+ * - Email format validation
+ * - Password strength check (8+ chars, upper/lower/number)
+ * - Birth date selection via day/month/year dropdowns
+ * - City selection with search/autocomplete from Israeli Government API
+ *
+ * On success: redirects to the login page.
+ * On failure: shows an alert with the error message.
+ */
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../config";

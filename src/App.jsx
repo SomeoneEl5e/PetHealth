@@ -1,3 +1,20 @@
+/**
+ * App Component — Root Application Layout
+ * =========================================
+ * Sets up React Router with all application routes and manages
+ * the global authentication state (isLoggedIn).
+ *
+ * Layout Structure:
+ * - Navbar (always visible, shows role-based navigation)
+ * - Page content (swapped by React Router)
+ * - Footer (always visible)
+ *
+ * Route Protection:
+ * - Public routes: /, /about, /login, /signup
+ * - Protected routes: /profile, /edit-profile, /manage
+ *   (redirect to /login if not authenticated)
+ * - Catch-all (*) redirects to home
+ */
 import React, { useState, useEffect } from "react"; 
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import Navbar from "./components/Navbar";
@@ -13,6 +30,7 @@ import EditProfile    from "./pages/EditProfile";
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  // Check for existing session token on mount
   useEffect(() => {
     const token = sessionStorage.getItem("token");
     if (token) {

@@ -1,3 +1,21 @@
+/**
+ * Navbar Component
+ * ----------------
+ * Top navigation bar visible on every page.
+ *
+ * Features:
+ * - Logo link to home
+ * - About page link
+ * - Conditional navigation based on login state:
+ *   - Logged in: greeting, Pets link, Manage link (editors+), Logout
+ *   - Logged out: Log in, Sign Up
+ * - Dark/light theme toggle (persisted in localStorage)
+ * - Role-based "Manage" link shown only for editor/sub-admin/admin
+ *
+ * Props:
+ * - isLoggedIn: boolean
+ * - setIsLoggedIn: state setter to update login status on logout
+ */
 import React, { useState, useEffect } from "react";
 import "./Navbar.css"
 import { Link, useNavigate } from "react-router-dom";

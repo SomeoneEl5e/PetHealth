@@ -1,3 +1,15 @@
+/**
+ * Login Page
+ * ----------
+ * Simple email/password login form.
+ *
+ * On successful login:
+ * - Stores JWT token, userId, firstName, and role in sessionStorage
+ * - Sets global isLoggedIn state to true
+ * - Redirects to the home page
+ *
+ * On failure: shows an alert with the server's error message.
+ */
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { API_BASE } from "../config";

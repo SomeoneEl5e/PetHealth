@@ -1,3 +1,19 @@
+/**
+ * About Page
+ * ----------
+ * Public informational page describing PetHealth's mission, features,
+ * and the team behind it.
+ *
+ * Sections:
+ * 1. Hero — platform introduction
+ * 2. Mission — why PetHealth exists
+ * 3. For Pet Owners — feature cards for individual users
+ * 4. AI Section — AI engine capabilities
+ * 5. For Associations — management suite features
+ * 6. Technology — tech stack overview
+ * 7. Team — co-founders
+ * 8. Contact — email link
+ */
 import React from "react";
 import "./About.css";
 

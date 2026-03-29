@@ -1,3 +1,21 @@
+/**
+ * AddVisitForm Component
+ * ----------------------
+ * A modal form for adding a new vet visit or editing an existing one.
+ *
+ * Supports both create and edit modes:
+ * - Create: all fields start empty
+ * - Edit: fields pre-populated from initialData (the existing visit record)
+ *
+ * Required fields: date, veterinarian, clinic address, reason.
+ * Date is restricted to today or earlier.
+ *
+ * Props:
+ * - pet: the pet object ({ _id, name, type })
+ * - onCancel: callback to close the form
+ * - onSave: (petId, visitData, visitId?) => void
+ * - initialData: (optional) existing visit object for editing
+ */
 import React, { useState } from "react";
 import "./AddVisitForm.css";
 

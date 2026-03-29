@@ -1,4 +1,24 @@
-// src/pages/PersonalData.jsx
+/**
+ * PersonalData Page — Pet Management Dashboard
+ * =============================================
+ * The main page for authenticated users to manage their pets.
+ *
+ * Features:
+ * - Displays all user's pets as PetCard components in a grid
+ * - Edit mode toggle (shows edit/delete buttons on pet cards)
+ * - Add new pet (opens AddPetForm modal)
+ * - Edit existing pet (opens AddPetForm pre-populated)
+ * - Delete pet (with confirmation dialog)
+ * - Add vet visit / vaccine (opens respective modal forms)
+ * - View full visit/vaccine history (opens HistoryModal)
+ * - Edit/delete visits from within the history modal
+ * - Generate AI health summaries (opens AI summary modal)
+ *
+ * State management:
+ * - Pets are fetched on mount from /api/pets
+ * - Pet types and breeds are fetched lazily (only when add-pet form opens)
+ * - Modals are controlled via boolean state flags + current pet/visit refs
+ */
 
 import React, { useEffect, useState } from "react";
 import PetCard    from "../components/PetCard";
@@ -26,14 +46,14 @@ export default function PersonalData() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiPetName, setAiPetName] = useState("");
 
-  // helper to turn an ISO date string into an integer age in years
+  // Helper: convert an ISO birth date string into an integer age in years
   function getAgeFromBirthDate(birthDate) {
     if (!birthDate) return "";
     const diffMs = Date.now() - new Date(birthDate).getTime();
     return Math.floor(diffMs / (1000 * 60 * 60 * 24 * 365.25));
   }
 
-  // fetch existing pets on mount
+  // Fetch existing pets from the server on component mount
   useEffect(() => {
     (async () => {
       try {
@@ -52,7 +72,7 @@ export default function PersonalData() {
     })();
   }, []);
 
-  // show the add‑pet form, fetching types/breeds only once
+  // Show the add-pet form, fetching pet types and breeds the first time
   const handleShowForm = async () => {
     if (!petTypes.length) {
       const [typesRes, breedsRes] = await Promise.all([
@@ -66,7 +86,7 @@ export default function PersonalData() {
     setShowForm(true);
   };
 
-  // add a new pet
+  // Add a new pet to the user's collection
   const handleAddPet = async formData => {
     const token = sessionStorage.getItem("token");
     const res   = await fetch(`${API_BASE}/api/pets`, {
@@ -77,7 +97,7 @@ export default function PersonalData() {
     if (res.ok) { setPets(await res.json()); setShowForm(false); } else alert("Cannot add pet");
   };
 
-  // edit an existing pet
+  // Edit an existing pet's details (name, type, breed, photo, etc.)
   const handleEditPet = async formData => {
     const token = sessionStorage.getItem("token");
     const res = await fetch(`${API_BASE}/api/pets/${editingPet._id}`, {
@@ -98,7 +118,7 @@ export default function PersonalData() {
     setShowForm(true);
   };
 
-  // delete an existing pet, with confirmation
+  // Delete a pet from the user's collection (with confirmation)
   const handleDeletePet = async id => {
     if (!window.confirm("Are you sure?")) return;
     const token = sessionStorage.getItem("token");
@@ -249,7 +269,7 @@ export default function PersonalData() {
     }
   };
 
-  // Simple markdown to HTML converter
+  // Simple markdown-to-HTML converter for AI summary display
   const formatMarkdown = (text) => {
     if (!text) return "";
     return text

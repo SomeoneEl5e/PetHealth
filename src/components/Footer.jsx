@@ -1,3 +1,8 @@
+/**
+ * Footer Component
+ * ----------------
+ * Simple footer displayed on every page with copyright information.
+ */
 import React from "react";
 import "./Footer.css";
 

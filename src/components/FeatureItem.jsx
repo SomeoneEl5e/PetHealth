@@ -1,3 +1,14 @@
+/**
+ * FeatureItem Component
+ * ---------------------
+ * A reusable card for displaying a feature with an image, title,
+ * and description. Used on the Home and About pages.
+ *
+ * Props:
+ * - imageSrc: URL for the feature illustration
+ * - title: feature heading text
+ * - description: feature explanation text
+ */
 import React from 'react';
 import './FeatureItem.css';
 

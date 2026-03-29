@@ -1,10 +1,24 @@
+/**
+ * Me Router — User Profile Management
+ * ------------------------------------
+ * Prefix: /api/me
+ *
+ * Allows authenticated users to view and update their own profile.
+ * All routes require a valid JWT token.
+ *
+ * Endpoints:
+ * - GET  /api/me   — Retrieve current user's profile data
+ * - PUT  /api/me   — Update profile fields and/or change password
+ */
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const User = require("../models/user");
 const router = express.Router();
 
-// Auth middleware
+// ─── JWT Authentication Middleware ──────────────────────────
+// Extracts and verifies the Bearer token from the Authorization header.
+// Attaches req.userId for use in downstream route handlers.
 router.use((req, res, next) => {
   try {
     const header = req.headers.authorization || "";
@@ -18,7 +32,7 @@ router.use((req, res, next) => {
   }
 });
 
-// GET own profile
+// GET /api/me — Retrieve own profile (excludes password and pets)
 router.get("/", async (req, res) => {
   try {
     const user = await User.findById(req.userId, "firstName lastName email dateOfBirth city");
@@ -29,19 +43,21 @@ router.get("/", async (req, res) => {
   }
 });
 
-// PUT update own profile
+// PUT /api/me — Update own profile fields and optionally change password
 router.put("/", async (req, res) => {
   try {
     const { firstName, lastName, email, dateOfBirth, city, currentPassword, newPassword } = req.body;
     const user = await User.findById(req.userId);
     if (!user) return res.status(404).json({ message: "User not found" });
 
+    // Update basic profile fields if provided
     if (firstName) user.firstName = firstName;
     if (lastName) user.lastName = lastName;
     if (email) user.email = email;
     if (dateOfBirth) user.dateOfBirth = dateOfBirth;
     if (city) user.city = city;
 
+    // Password change requires current password verification
     if (newPassword) {
       if (!currentPassword) return res.status(400).json({ message: "Current password is required" });
       const isMatch = await bcrypt.compare(currentPassword, user.password);
@@ -53,7 +69,9 @@ router.put("/", async (req, res) => {
     await user.save();
     res.json({ firstName: user.firstName, lastName: user.lastName, email: user.email, dateOfBirth: user.dateOfBirth, city: user.city });
   } catch (err) {
+    // Handle duplicate email error from MongoDB unique index
     if (err.code === 11000) return res.status(400).json({ message: "Email already in use" });
+    // Handle Mongoose validation errors (name format, age, etc.)
     if (err.errors) {
       const msg = Object.values(err.errors).map(e => e.message).join(", ");
       return res.status(400).json({ message: msg });

@@ -1,3 +1,22 @@
+/**
+ * AddPetForm Component
+ * --------------------
+ * A modal form for adding a new pet or editing an existing one.
+ *
+ * Features:
+ * - Photo upload with live preview (defaults to question mark placeholder)
+ * - Pet type dropdown (fetched from server)
+ * - Breed dropdown filtered by selected pet type, with "Mixed" and "Unknown" always available
+ * - Date picker for birth date, gender selector
+ * - Submits as FormData (multipart) to support file upload
+ *
+ * Props:
+ * - petTypes: array of available pet types
+ * - allBreeds: array of all breeds (filtered client-side by type)
+ * - onCancel: callback to close the form
+ * - onSave: callback with FormData when submitted
+ * - editingPet: (optional) existing pet object to pre-fill for editing
+ */
 import React, { useState } from "react";
 import "./AddPetForm.css";
 
