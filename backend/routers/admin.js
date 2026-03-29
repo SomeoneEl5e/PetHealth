@@ -16,7 +16,7 @@
  * - All routes require JWT authentication
  * - Minimum role required: "editor" (enforced by middleware)
  * - Editor: can only modify own items within 24 hours of creation
- * - Sub-admin: can view users (other sub-admins only) and statistics
+ * - Sub-admin: can view all users except admins, and statistics
  * - Admin: full access to all management features
  *
  * Every create/edit/delete/toggle action is logged to the ActivityLog
@@ -200,9 +200,9 @@ router.get("/users", async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
     let users = await User.find({}, "-password").sort({ firstName: 1 });
-    // sub-admin only sees other sub-admins
+    // sub-admin sees all users except admins
     if (req.userRole === "sub-admin") {
-      users = users.filter((u) => u.role === "sub-admin");
+      users = users.filter((u) => u.role !== "admin");
     }
     res.json(users);
   } catch (err) {
@@ -284,8 +284,8 @@ router.post("/users/:id/reset-password", async (req, res) => {
     if (!password) return res.status(400).json({ message: "Password is required" });
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
-    // sub-admin can only reset other sub-admin passwords
-    if (req.userRole === "sub-admin" && user.role !== "sub-admin") {
+    // sub-admin cannot reset admin passwords
+    if (req.userRole === "sub-admin" && user.role === "admin") {
       return res.status(403).json({ message: "Access denied" });
     }
     user.password = await bcrypt.hash(password, 10);
