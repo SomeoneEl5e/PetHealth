@@ -21,7 +21,20 @@
  *
  * Every create/edit/delete/toggle action is logged to the ActivityLog
  * collection for audit trail purposes.
+ *
+ * ── File Organization (use Ctrl+Shift+[ to collapse regions) ──
+ * 1. IMPORTS & CONFIG
+ * 2. AUTH MIDDLEWARE
+ * 3. DATA MANAGEMENT — Vaccine Types  (admin "Vaccines" tab)
+ * 4. DATA MANAGEMENT — Pet Types      (admin "Pet Types" tab)
+ * 5. DATA MANAGEMENT — Breeds         (admin "Breeds" tab)
+ * 6. USER MANAGEMENT                  (admin "Users" tab)
+ * 7. SUMMARY                          (admin "Summary" tab)
+ * 8. STATISTICS                       (admin "Statistics" tab)
+ * 9. ACTIVITY STATS                   (admin "Activity" tab)
  */
+
+//#region ═══ 1. IMPORTS & CONFIG ═══════════════════════════════
 const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
@@ -50,8 +63,9 @@ async function withCreator(query) {
   users.forEach(u => { map[String(u._id)] = `${u.firstName} ${u.lastName}`; });
   return docs.map(d => ({ ...d, createdByName: d.createdBy ? (map[String(d.createdBy)] || "Unknown") : "Unknown" }));
 }
+//#endregion
 
-// ─── Authentication Middleware ──────────────────────────────
+//#region ═══ 2. AUTH MIDDLEWARE ═════════════════════════════════
 // Verifies JWT, fetches the user's role, and requires at least "editor" role.
 // Attaches req.userId and req.userRole for downstream route handlers.
 router.use(async (req, res, next) => {
@@ -71,8 +85,10 @@ router.use(async (req, res, next) => {
     return res.status(401).json({ message: "Unauthorized" });
   }
 });
+//#endregion
 
-// ─── VACCINE TYPES ──────────────────────────────────────────
+//#region ═══ 3. DATA MANAGEMENT — Vaccine Types ════════════════
+// Admin "Vaccines" tab
 // CRUD operations for the master list of vaccine types.
 // Editors can only modify their own items within 24 hours.
 // All mutations are logged to ActivityLog.
@@ -187,13 +203,232 @@ router.delete("/vaccines/:id", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+//#endregion
 
-// ─── USERS ──────────────────────────────────────────────────
+//#region ═══ 4. DATA MANAGEMENT — Pet Types ════════════════════
+// Admin "Pet Types" tab
+// CRUD operations for pet types (same pattern as vaccine types).
+
+// GET /api/admin/petTypes — List all pet types with creator names
+router.get("/petTypes", async (req, res) => {
+  try {
+    const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
+    res.json(list);
+  } catch (err) {
+    console.error("GET /admin/petTypes error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// POST /api/admin/petTypes — Create a new pet type
+router.post("/petTypes", async (req, res) => {
+  try {
+    const { petType } = req.body;
+    if (!petType) return res.status(400).json({ message: "Pet type name is required" });
+    const existing = await PetType.findOne({ petType: petType.trim() });
+    if (existing) return res.status(400).json({ message: "Pet type already exists" });
+    await PetType.create({ petType: petType.trim(), createdBy: req.userId });
+    await ActivityLog.create({ userId: req.userId, action: "add", target: "petType", targetName: petType.trim() });
+    const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
+    res.json(list);
+  } catch (err) {
+    console.error("POST /admin/petTypes error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// PUT /api/admin/petTypes/:id — Edit a pet type name
+router.put("/petTypes/:id", async (req, res) => {
+  try {
+    const { petType } = req.body;
+    if (!petType) return res.status(400).json({ message: "Pet type name is required" });
+    const doc = await PetType.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: "Pet type not found" });
+    // Editor: can only edit own items within 24 hours
+    if (req.userRole === "editor") {
+      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
+        return res.status(403).json({ message: "You can only edit items you created" });
+      }
+      if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
+        return res.status(403).json({ message: "Edit window (24 hours) has expired" });
+      }
+    }
+    doc.petType = petType.trim();
+    await doc.save();
+    await ActivityLog.create({ userId: req.userId, action: "edit", target: "petType", targetName: petType.trim() });
+    const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
+    res.json(list);
+  } catch (err) {
+    console.error("PUT /admin/petTypes error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// PATCH /api/admin/petTypes/:id/toggle — Toggle pet type enabled/disabled
+router.patch("/petTypes/:id/toggle", async (req, res) => {
+  try {
+    const doc = await PetType.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: "Pet type not found" });
+    if (req.userRole === "editor") {
+      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
+        return res.status(403).json({ message: "You can only modify items you created" });
+      }
+      if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
+        return res.status(403).json({ message: "Edit window (24 hours) has expired" });
+      }
+    }
+    doc.disabled = !doc.disabled;
+    await doc.save();
+    await ActivityLog.create({ userId: req.userId, action: doc.disabled ? "disable" : "enable", target: "petType", targetName: doc.petType });
+    const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
+    res.json(list);
+  } catch (err) {
+    console.error("PATCH /admin/petTypes/:id/toggle error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// DELETE /api/admin/petTypes/:id — Delete a pet type (within 24h only)
+router.delete("/petTypes/:id", async (req, res) => {
+  try {
+    const doc = await PetType.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: "Pet type not found" });
+    if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
+      return res.status(403).json({ message: "Can only delete pet types within 24 hours of creation" });
+    }
+    if (req.userRole === "editor") {
+      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
+        return res.status(403).json({ message: "You can only delete items you created" });
+      }
+    }
+    const ptName = doc.petType;
+    await doc.deleteOne();
+    await ActivityLog.create({ userId: req.userId, action: "delete", target: "petType", targetName: ptName });
+    const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
+    res.json(list);
+  } catch (err) {
+    console.error("DELETE /admin/petTypes error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+//#endregion
+
+//#region ═══ 5. DATA MANAGEMENT — Breeds ═══════════════════════
+// Admin "Breeds" tab
+// CRUD operations for breeds (same pattern as vaccine types).
+
+// GET /api/admin/breeds — List all breeds with creator names
+router.get("/breeds", async (req, res) => {
+  try {
+    const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
+    res.json(list);
+  } catch (err) {
+    console.error("GET /admin/breeds error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// POST /api/admin/breeds — Create a new breed
+router.post("/breeds", async (req, res) => {
+  try {
+    const { breed, type } = req.body;
+    if (!breed || !type) return res.status(400).json({ message: "Breed name and type are required" });
+    const existing = await Breed.findOne({ breed: breed.trim(), type: type.trim() });
+    if (existing) return res.status(400).json({ message: "This breed already exists for that type" });
+    await Breed.create({ breed: breed.trim(), type: type.trim(), createdBy: req.userId });
+    await ActivityLog.create({ userId: req.userId, action: "add", target: "breed", targetName: `${breed.trim()} (${type.trim()})` });
+    const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
+    res.json(list);
+  } catch (err) {
+    console.error("POST /admin/breeds error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// PUT /api/admin/breeds/:id — Edit a breed's name/type
+router.put("/breeds/:id", async (req, res) => {
+  try {
+    const { breed, type } = req.body;
+    if (!breed || !type) return res.status(400).json({ message: "Breed name and type are required" });
+    const doc = await Breed.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: "Breed not found" });
+    // Editor: can only edit own items within 24 hours
+    if (req.userRole === "editor") {
+      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
+        return res.status(403).json({ message: "You can only edit items you created" });
+      }
+      if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
+        return res.status(403).json({ message: "Edit window (24 hours) has expired" });
+      }
+    }
+    doc.breed = breed.trim();
+    doc.type = type.trim();
+    await doc.save();
+    await ActivityLog.create({ userId: req.userId, action: "edit", target: "breed", targetName: `${breed.trim()} (${type.trim()})` });
+    const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
+    res.json(list);
+  } catch (err) {
+    console.error("PUT /admin/breeds error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// PATCH /api/admin/breeds/:id/toggle — Toggle breed enabled/disabled
+router.patch("/breeds/:id/toggle", async (req, res) => {
+  try {
+    const doc = await Breed.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: "Breed not found" });
+    if (req.userRole === "editor") {
+      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
+        return res.status(403).json({ message: "You can only modify items you created" });
+      }
+      if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
+        return res.status(403).json({ message: "Edit window (24 hours) has expired" });
+      }
+    }
+    doc.disabled = !doc.disabled;
+    await doc.save();
+    await ActivityLog.create({ userId: req.userId, action: doc.disabled ? "disable" : "enable", target: "breed", targetName: `${doc.breed} (${doc.type})` });
+    const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
+    res.json(list);
+  } catch (err) {
+    console.error("PATCH /admin/breeds/:id/toggle error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// DELETE /api/admin/breeds/:id — Delete a breed (within 24h only)
+router.delete("/breeds/:id", async (req, res) => {
+  try {
+    const doc = await Breed.findById(req.params.id);
+    if (!doc) return res.status(404).json({ message: "Breed not found" });
+    if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
+      return res.status(403).json({ message: "Can only delete breeds within 24 hours of creation" });
+    }
+    if (req.userRole === "editor") {
+      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
+        return res.status(403).json({ message: "You can only delete items you created" });
+      }
+    }
+    const breedName = `${doc.breed} (${doc.type})`;
+    await doc.deleteOne();
+    await ActivityLog.create({ userId: req.userId, action: "delete", target: "breed", targetName: breedName });
+    const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
+    res.json(list);
+  } catch (err) {
+    console.error("DELETE /admin/breeds error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+//#endregion
+
+//#region ═══ 6. USER MANAGEMENT ════════════════════════════════
+// Admin "Users" tab
 // User management endpoints (view/edit/delete/reset-password/pass-role).
 // User viewing requires sub-admin or admin role.
 // User editing/deleting requires admin role.
 
-// GET /api/admin/users — List all users (sub-admin sees only other sub-admins)
+// GET /api/admin/users — List all users (sub-admin sees all except admins)
 router.get("/users", async (req, res) => {
   try {
     if (!USER_VIEW_ROLES.includes(req.userRole)) {
@@ -264,6 +499,10 @@ router.delete("/users/:id", async (req, res) => {
     }
     const user = await User.findById(req.params.id);
     if (!user) return res.status(404).json({ message: "User not found" });
+    // Cannot delete admin users
+    if (user.role === "admin") {
+      return res.status(403).json({ message: "Admin users cannot be deleted" });
+    }
     await user.deleteOne();
     const users = await User.find({}, "-password").sort({ firstName: 1 });
     res.json(users);
@@ -274,7 +513,7 @@ router.delete("/users/:id", async (req, res) => {
 });
 
 // POST /api/admin/users/:id/reset-password — Reset a user's password
-// Sub-admin can only reset other sub-admin passwords
+// Sub-admin cannot reset admin passwords
 router.post("/users/:id/reset-password", async (req, res) => {
   try {
     if (!USER_VIEW_ROLES.includes(req.userRole)) {
@@ -313,6 +552,11 @@ router.post("/pass-role", async (req, res) => {
     const target = await User.findById(targetUserId);
     if (!target) return res.status(404).json({ message: "User not found" });
 
+    // Can only pass admin role to a sub-admin
+    if (target.role !== "sub-admin") {
+      return res.status(400).json({ message: "Admin role can only be passed to a sub-admin" });
+    }
+
     // Enforce max 3 sub-admins (self will become sub-admin)
     const subAdminCount = await User.countDocuments({ role: "sub-admin", _id: { $ne: req.userId } });
     if (subAdminCount >= 3) {
@@ -334,8 +578,10 @@ router.post("/pass-role", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+//#endregion
 
-// ─── SUMMARY ────────────────────────────────────────────────
+//#region ═══ 7. SUMMARY ═══════════════════════════════════════
+// Admin "Summary" tab
 // Flattened view of all users and their pets for overview tables.
 
 // GET /api/admin/summary — List all pets with owner info
@@ -364,10 +610,28 @@ router.get("/summary", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+//#endregion
 
-// ─── STATISTICS ─────────────────────────────────────────────
+//#region ═══ 8. STATISTICS ════════════════════════════════════
+// Admin "Statistics" tab
 // Population-level analytics with comprehensive filtering.
 // Sub-admin and admin only.
+
+// Helper: compute pet age in years
+function petAgeYears(birthDate) {
+  if (!birthDate) return null;
+  return (Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
+}
+
+function petAgeGroup(birthDate) {
+  const age = petAgeYears(birthDate);
+  if (age === null) return "Unknown";
+  if (age < 1) return "< 1 year";
+  if (age < 3) return "1-3 years";
+  if (age < 5) return "3-5 years";
+  if (age < 8) return "5-8 years";
+  return "8+ years";
+}
 
 // GET /api/admin/statistics/filters — Available filter options for the statistics dashboard
 router.get("/statistics/filters", async (req, res) => {
@@ -378,20 +642,21 @@ router.get("/statistics/filters", async (req, res) => {
 
     const users = await User.find({}, "city pets").lean();
     const allVaccineTypes = await Vaccine.find({}, "Name").lean();
+    const allBreeds = await Breed.find({ disabled: { $ne: true } }, "breed type").lean();
+    const allPetTypes = await PetType.find({ disabled: { $ne: true } }, "petType").lean();
 
     const citiesSet = new Set();
     const petTypesSet = new Set();
-    const breedsMap = {}; // breed -> Set of pet types
     const vaccineNamesSet = new Set();
+
+    // Pet types from the PetType collection (not from pet data)
+    for (const pt of allPetTypes) {
+      petTypesSet.add(pt.petType);
+    }
 
     for (const u of users) {
       if (u.city) citiesSet.add(u.city);
       for (const p of u.pets) {
-        if (p.type) petTypesSet.add(p.type);
-        if (p.breed) {
-          if (!breedsMap[p.breed]) breedsMap[p.breed] = new Set();
-          if (p.type) breedsMap[p.breed].add(p.type);
-        }
         if (p.vaccines) {
           for (const v of p.vaccines) {
             if (v.vaccineName) vaccineNamesSet.add(v.vaccineName);
@@ -405,7 +670,12 @@ router.get("/statistics/filters", async (req, res) => {
       vaccineNamesSet.add(vt.Name);
     }
 
-    // Build breeds array with associated pet types
+    // Build breeds from the Breed collection (not from pet data)
+    const breedsMap = {};
+    for (const b of allBreeds) {
+      if (!breedsMap[b.breed]) breedsMap[b.breed] = new Set();
+      breedsMap[b.breed].add(b.type);
+    }
     const breeds = Object.entries(breedsMap)
       .map(([breed, types]) => ({ breed, petTypes: [...types].sort() }))
       .sort((a, b) => a.breed.localeCompare(b.breed));
@@ -424,22 +694,7 @@ router.get("/statistics/filters", async (req, res) => {
   }
 });
 
-// Helper: compute pet age in years
-function petAgeYears(birthDate) {
-  if (!birthDate) return null;
-  return (Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000);
-}
-
-function petAgeGroup(birthDate) {
-  const age = petAgeYears(birthDate);
-  if (age === null) return "Unknown";
-  if (age < 1) return "< 1 year";
-  if (age < 3) return "1-3 years";
-  if (age < 5) return "3-5 years";
-  if (age < 8) return "5-8 years";
-  return "8+ years";
-}
-
+// GET /api/admin/statistics — Full statistics with filtering
 router.get("/statistics", async (req, res) => {
   try {
     if (!USER_VIEW_ROLES.includes(req.userRole)) {
@@ -609,8 +864,12 @@ router.get("/statistics", async (req, res) => {
     }
 
     // 10. Vaccination coverage per vaccine type (period-aware)
+    // Only show vaccines relevant to the pet types present in the filtered data
+    const petTypesInData = new Set(allPets.map(p => p.type));
     const vaccineCoverage = [];
     for (const vt of allVaccineTypes) {
+      // Skip vaccines that don't apply to any pet type in the current dataset
+      if (!vt.PetType.some(pt => petTypesInData.has(pt))) continue;
       const eligiblePets = allPets.filter(p => vt.PetType.includes(p.type)).length;
       const vaccinatedPets = allPets.filter(p =>
         filterEventsByPeriod(p.vaccines).some(v => v.vaccineName === vt.Name)
@@ -658,221 +917,10 @@ router.get("/statistics", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+//#endregion
 
-// ─── PET TYPES ──────────────────────────────────────────────
-// CRUD operations for pet types (same pattern as vaccine types).
-
-// GET /api/admin/petTypes — List all pet types with creator names
-router.get("/petTypes", async (req, res) => {
-  try {
-    const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
-    res.json(list);
-  } catch (err) {
-    console.error("GET /admin/petTypes error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// POST /api/admin/petTypes — Create a new pet type
-router.post("/petTypes", async (req, res) => {
-  try {
-    const { petType } = req.body;
-    if (!petType) return res.status(400).json({ message: "Pet type name is required" });
-    const existing = await PetType.findOne({ petType: petType.trim() });
-    if (existing) return res.status(400).json({ message: "Pet type already exists" });
-    await PetType.create({ petType: petType.trim(), createdBy: req.userId });
-    await ActivityLog.create({ userId: req.userId, action: "add", target: "petType", targetName: petType.trim() });
-    const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
-    res.json(list);
-  } catch (err) {
-    console.error("POST /admin/petTypes error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// PUT /api/admin/petTypes/:id — Edit a pet type name
-router.put("/petTypes/:id", async (req, res) => {
-  try {
-    const { petType } = req.body;
-    if (!petType) return res.status(400).json({ message: "Pet type name is required" });
-    const doc = await PetType.findById(req.params.id);
-    if (!doc) return res.status(404).json({ message: "Pet type not found" });
-    // Editor: can only edit own items within 24 hours
-    if (req.userRole === "editor") {
-      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
-        return res.status(403).json({ message: "You can only edit items you created" });
-      }
-      if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
-        return res.status(403).json({ message: "Edit window (24 hours) has expired" });
-      }
-    }
-    doc.petType = petType.trim();
-    await doc.save();
-    await ActivityLog.create({ userId: req.userId, action: "edit", target: "petType", targetName: petType.trim() });
-    const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
-    res.json(list);
-  } catch (err) {
-    console.error("PUT /admin/petTypes error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// PATCH /api/admin/petTypes/:id/toggle — Toggle pet type enabled/disabled
-router.patch("/petTypes/:id/toggle", async (req, res) => {
-  try {
-    const doc = await PetType.findById(req.params.id);
-    if (!doc) return res.status(404).json({ message: "Pet type not found" });
-    if (req.userRole === "editor") {
-      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
-        return res.status(403).json({ message: "You can only modify items you created" });
-      }
-      if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
-        return res.status(403).json({ message: "Edit window (24 hours) has expired" });
-      }
-    }
-    doc.disabled = !doc.disabled;
-    await doc.save();
-    await ActivityLog.create({ userId: req.userId, action: doc.disabled ? "disable" : "enable", target: "petType", targetName: doc.petType });
-    const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
-    res.json(list);
-  } catch (err) {
-    console.error("PATCH /admin/petTypes/:id/toggle error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// DELETE /api/admin/petTypes/:id — Delete a pet type (within 24h only)
-router.delete("/petTypes/:id", async (req, res) => {
-  try {
-    const doc = await PetType.findById(req.params.id);
-    if (!doc) return res.status(404).json({ message: "Pet type not found" });
-    if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
-      return res.status(403).json({ message: "Can only delete pet types within 24 hours of creation" });
-    }
-    if (req.userRole === "editor") {
-      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
-        return res.status(403).json({ message: "You can only delete items you created" });
-      }
-    }
-    const ptName = doc.petType;
-    await doc.deleteOne();
-    await ActivityLog.create({ userId: req.userId, action: "delete", target: "petType", targetName: ptName });
-    const list = await withCreator(PetType.find().sort({ createdAt: -1 }));
-    res.json(list);
-  } catch (err) {
-    console.error("DELETE /admin/petTypes error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ─── BREEDS ──────────────────────────────────────────────────
-// CRUD operations for breeds (same pattern as vaccine types).
-
-// GET /api/admin/breeds — List all breeds with creator names
-router.get("/breeds", async (req, res) => {
-  try {
-    const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
-    res.json(list);
-  } catch (err) {
-    console.error("GET /admin/breeds error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// POST /api/admin/breeds — Create a new breed
-router.post("/breeds", async (req, res) => {
-  try {
-    const { breed, type } = req.body;
-    if (!breed || !type) return res.status(400).json({ message: "Breed name and type are required" });
-    const existing = await Breed.findOne({ breed: breed.trim(), type: type.trim() });
-    if (existing) return res.status(400).json({ message: "This breed already exists for that type" });
-    await Breed.create({ breed: breed.trim(), type: type.trim(), createdBy: req.userId });
-    await ActivityLog.create({ userId: req.userId, action: "add", target: "breed", targetName: `${breed.trim()} (${type.trim()})` });
-    const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
-    res.json(list);
-  } catch (err) {
-    console.error("POST /admin/breeds error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// PUT /api/admin/breeds/:id — Edit a breed's name/type
-router.put("/breeds/:id", async (req, res) => {
-  try {
-    const { breed, type } = req.body;
-    if (!breed || !type) return res.status(400).json({ message: "Breed name and type are required" });
-    const doc = await Breed.findById(req.params.id);
-    if (!doc) return res.status(404).json({ message: "Breed not found" });
-    // Editor: can only edit own items within 24 hours
-    if (req.userRole === "editor") {
-      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
-        return res.status(403).json({ message: "You can only edit items you created" });
-      }
-      if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
-        return res.status(403).json({ message: "Edit window (24 hours) has expired" });
-      }
-    }
-    doc.breed = breed.trim();
-    doc.type = type.trim();
-    await doc.save();
-    await ActivityLog.create({ userId: req.userId, action: "edit", target: "breed", targetName: `${breed.trim()} (${type.trim()})` });
-    const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
-    res.json(list);
-  } catch (err) {
-    console.error("PUT /admin/breeds error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// PATCH /api/admin/breeds/:id/toggle — Toggle breed enabled/disabled
-router.patch("/breeds/:id/toggle", async (req, res) => {
-  try {
-    const doc = await Breed.findById(req.params.id);
-    if (!doc) return res.status(404).json({ message: "Breed not found" });
-    if (req.userRole === "editor") {
-      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
-        return res.status(403).json({ message: "You can only modify items you created" });
-      }
-      if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
-        return res.status(403).json({ message: "Edit window (24 hours) has expired" });
-      }
-    }
-    doc.disabled = !doc.disabled;
-    await doc.save();
-    await ActivityLog.create({ userId: req.userId, action: doc.disabled ? "disable" : "enable", target: "breed", targetName: `${doc.breed} (${doc.type})` });
-    const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
-    res.json(list);
-  } catch (err) {
-    console.error("PATCH /admin/breeds/:id/toggle error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// DELETE /api/admin/breeds/:id — Delete a breed (within 24h only)
-router.delete("/breeds/:id", async (req, res) => {
-  try {
-    const doc = await Breed.findById(req.params.id);
-    if (!doc) return res.status(404).json({ message: "Breed not found" });
-    if (Date.now() - new Date(doc.createdAt).getTime() > 24 * 60 * 60 * 1000) {
-      return res.status(403).json({ message: "Can only delete breeds within 24 hours of creation" });
-    }
-    if (req.userRole === "editor") {
-      if (!doc.createdBy || doc.createdBy.toString() !== req.userId) {
-        return res.status(403).json({ message: "You can only delete items you created" });
-      }
-    }
-    const breedName = `${doc.breed} (${doc.type})`;
-    await doc.deleteOne();
-    await ActivityLog.create({ userId: req.userId, action: "delete", target: "breed", targetName: breedName });
-    const list = await withCreator(Breed.find().sort({ createdAt: -1 }));
-    res.json(list);
-  } catch (err) {
-    console.error("DELETE /admin/breeds error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-// ─── ACTIVITY STATS ─────────────────────────────────────────
+//#region ═══ 9. ACTIVITY STATS ═════════════════════════════════
+// Admin "Activity" tab
 // Staff performance tracking and audit trail.
 // Aggregates action counts by user, target type, and action type.
 // Admin sees all staff; sub-admin sees editors and self only.
@@ -965,5 +1013,6 @@ router.get("/activity-stats", async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
+//#endregion
 
 module.exports = router;

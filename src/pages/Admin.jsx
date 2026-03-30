@@ -138,6 +138,9 @@ export default function Admin() {
   const [editingUser, setEditingUser] = useState(null);
   const [userForm, setUserForm] = useState({ firstName: "", lastName: "", email: "", role: "user", password: "" });
   const [expandedUser, setExpandedUser] = useState(null);       // User ID shown expanded in table
+  const [userSearchName, setUserSearchName] = useState("");     // Search by name
+  const [userSearchEmail, setUserSearchEmail] = useState("");   // Search by email
+  const [userSearchRole, setUserSearchRole] = useState("");     // Filter by role
   const [expandedPetVisits, setExpandedPetVisits] = useState(null);   // Pet ID showing visit details
   const [expandedPetVaccines, setExpandedPetVaccines] = useState(null); // Pet ID showing vaccine details
 
@@ -642,6 +645,43 @@ export default function Admin() {
       {/* ─── USERS TAB ─── */}
       {tab === "users" && canViewUsers && (
         <div className="admin-section">
+          {/* Search filters */}
+          <div className="admin-user-search">
+            <div className="admin-user-search__field">
+              <label className="admin-user-search__label">Name</label>
+              <input
+                type="text"
+                placeholder="Search by name..."
+                value={userSearchName}
+                onChange={(e) => setUserSearchName(e.target.value)}
+                className="admin-user-search__input"
+              />
+            </div>
+            <div className="admin-user-search__field">
+              <label className="admin-user-search__label">Email</label>
+              <input
+                type="text"
+                placeholder="Search by email..."
+                value={userSearchEmail}
+                onChange={(e) => setUserSearchEmail(e.target.value)}
+                className="admin-user-search__input"
+              />
+            </div>
+            <div className="admin-user-search__field admin-user-search__field--role">
+              <label className="admin-user-search__label">Role</label>
+              <select
+                value={userSearchRole}
+                onChange={(e) => setUserSearchRole(e.target.value)}
+                className="admin-user-search__select"
+              >
+                <option value="">All Roles</option>
+                <option value="user">User</option>
+                <option value="editor">Editor</option>
+                <option value="sub-admin">Sub-Admin</option>
+                <option value="admin">Admin</option>
+              </select>
+            </div>
+          </div>
           {/* Edit form — admin only */}
           {isAdmin && editingUser && (
             <form className="admin-form" onSubmit={handleUserSubmit}>
@@ -681,7 +721,16 @@ export default function Admin() {
               <tr><th>Name</th><th>Email</th><th>Role</th><th>Pets</th><th>Actions</th></tr>
             </thead>
             <tbody>
-              {users.map((u) => (
+              {users.filter((u) => {
+                const nameQ = userSearchName.trim().toLowerCase();
+                const emailQ = userSearchEmail.trim().toLowerCase();
+                const roleQ = userSearchRole;
+                const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+                if (nameQ && !fullName.includes(nameQ)) return false;
+                if (emailQ && !u.email.toLowerCase().includes(emailQ)) return false;
+                if (roleQ && (u.role || "user") !== roleQ) return false;
+                return true;
+              }).map((u) => (
                 <React.Fragment key={u._id}>
                   <tr>
                     <td>{u.firstName} {u.lastName}</td>
@@ -705,8 +754,8 @@ export default function Admin() {
                       {isAdmin && u._id !== sessionStorage.getItem("userId") && (
                         <>
                           <button className="btn-edit" title="Edit user" onClick={() => startEditUser(u)}>✎</button>
-                          <button className="btn-del" title="Delete user" onClick={() => handleDeleteUser(u._id)}>🗑</button>
-                          <button className="btn-edit" title="Pass admin role" onClick={() => handlePassRole(u._id)}>👑</button>
+                          {(u.role || "user") !== "admin" && <button className="btn-del" title="Delete user" onClick={() => handleDeleteUser(u._id)}>🗑</button>}
+                          {(u.role || "user") === "sub-admin" && <button className="btn-edit" title="Pass admin role" onClick={() => handlePassRole(u._id)}>👑</button>}
                         </>
                       )}
                     </td>
@@ -804,7 +853,16 @@ export default function Admin() {
                   )}
                 </React.Fragment>
               ))}
-              {users.length === 0 && <tr><td colSpan="5" className="admin-empty">No users</td></tr>}
+              {users.filter((u) => {
+                const nameQ = userSearchName.trim().toLowerCase();
+                const emailQ = userSearchEmail.trim().toLowerCase();
+                const roleQ = userSearchRole;
+                const fullName = `${u.firstName} ${u.lastName}`.toLowerCase();
+                if (nameQ && !fullName.includes(nameQ)) return false;
+                if (emailQ && !u.email.toLowerCase().includes(emailQ)) return false;
+                if (roleQ && (u.role || "user") !== roleQ) return false;
+                return true;
+              }).length === 0 && <tr><td colSpan="5" className="admin-empty">{(userSearchName || userSearchEmail || userSearchRole) ? "No matching users" : "No users"}</td></tr>}
             </tbody>
           </table>
         </div>
